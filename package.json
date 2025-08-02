@@ -4,6 +4,7 @@
   "description": "Simple flat-file headless CMS with GitHub storage",
   "main": "index.js",
   "scripts": {
+    "build": "echo 'Build completed'",
     "dev": "netlify dev",
     "start": "netlify dev"
   },
