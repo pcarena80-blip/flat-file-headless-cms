@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Post - Flat-File Headless CMS</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .post-container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+        }
+
+        .post-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .post-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            line-height: 1.2;
+        }
+
+        .post-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .post-author {
+            font-style: italic;
+        }
+
+        .post-date {
+            font-weight: 500;
+        }
+
+        .post-content {
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        .post-content h1,
+        .post-content h2,
+        .post-content h3,
+        .post-content h4,
+        .post-content h5,
+        .post-content h6 {
+            color: #2c3e50;
+            margin: 30px 0 15px 0;
+            font-weight: 600;
+        }
+
+        .post-content h1 { font-size: 2rem; }
+        .post-content h2 { font-size: 1.8rem; }
+        .post-content h3 { font-size: 1.5rem; }
+        .post-content h4 { font-size: 1.3rem; }
+        .post-content h5 { font-size: 1.1rem; }
+        .post-content h6 { font-size: 1rem; }
+
+        .post-content p {
+            margin-bottom: 20px;
+        }
+
+        .post-content ul,
+        .post-content ol {
+            margin-bottom: 20px;
+            padding-left: 30px;
+        }
+
+        .post-content li {
+            margin-bottom: 8px;
+        }
+
+        .post-content blockquote {
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+            margin: 20px 0;
+            font-style: italic;
+            color: #666;
+        }
+
+        .post-content code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .post-content pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        .post-content pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        .post-content a {
+            color: #667eea;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.3s ease;
+        }
+
+        .post-content a:hover {
+            border-bottom-color: #667eea;
+        }
+
+        .post-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .post-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .post-content th,
+        .post-content td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .post-content th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .post-tags {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .post-tags h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .tags-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .tag:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .post-container {
+                padding: 25px;
+            }
+            
+            .post-title {
+                font-size: 2rem;
+            }
+            
+            .post-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to Home</a>
+
+    <div class="container">
+        <div class="header">
+            <h1>📖 Blog Post</h1>
+        </div>
+
+        <div id="post-container" class="post-container">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Loading post...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class BlogPostViewer {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.loadPost();
+            }
+
+            async loadPost() {
+                const slug = this.getSlugFromUrl();
+                
+                if (!slug) {
+                    this.showError('No post specified');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/.netlify/functions/blogs/${slug}`);
+                    
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            this.showError('Post not found');
+                        } else {
+                            this.showError('Failed to load post');
+                        }
+                        return;
+                    }
+
+                    const post = await response.json();
+                    this.renderPost(post);
+                } catch (error) {
+                    console.error('Error loading post:', error);
+                    this.showError('Network error. Please try again.');
+                }
+            }
+
+            getSlugFromUrl() {
+                const pathSegments = window.location.pathname.split('/');
+                return pathSegments[pathSegments.length - 1];
+            }
+
+            renderPost(post) {
+                const container = document.getElementById('post-container');
+                
+                const date = new Date(post.publishedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                // Configure marked for security
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true
+                });
+
+                const content = marked.parse(post.content);
+
+                container.innerHTML = `
+                    <div class="post-header">
+                        <h1 class="post-title">${this.escapeHtml(post.title)}</h1>
+                        <div class="post-meta">
+                            <span class="post-author">by ${this.escapeHtml(post.author)}</span>
+                            <span class="post-date">${date}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="post-content">
+                        ${content}
+                    </div>
+                    
+                    ${post.tags && post.tags.length > 0 ? `
+                        <div class="post-tags">
+                            <h3>Tags:</h3>
+                            <div class="tags-list">
+                                ${post.tags.map(tag => `
+                                    <a href="/?tag=${encodeURIComponent(tag)}" class="tag">${this.escapeHtml(tag)}</a>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                `;
+
+                // Update page title
+                document.title = `${post.title} - Flat-File Headless CMS`;
+            }
+
+            showError(message) {
+                const container = document.getElementById('post-container');
+                container.innerHTML = `
+                    <div class="error">
+                        <h2>Error</h2>
+                        <p>${message}</p>
+                        <p><a href="/" style="color: white; text-decoration: underline;">Return to home</a></p>
+                    </div>
+                `;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        // Initialize the blog post viewer
+        document.addEventListener('DOMContentLoaded', () => {
+            new BlogPostViewer();
+        });
+    </script>
+</body>
+</html> 
