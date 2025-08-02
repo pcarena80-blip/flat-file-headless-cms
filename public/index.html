@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flat-File Headless CMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .admin-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .admin-link:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .blogs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .blog-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .blog-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .blog-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .blog-excerpt {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .blog-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .blog-date {
+            font-weight: 500;
+        }
+
+        .blog-author {
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-blogs {
+            text-align: center;
+            color: white;
+            padding: 60px 20px;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .stats {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .blogs-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Flat-File Headless CMS</h1>
+            <p>Modern blog platform with lazy loading and infinite scroll</p>
+        </div>
+
+        <a href="/admin" class="admin-link">🔐 Admin Panel</a>
+
+        <div id="blogs-container" class="blogs-container">
+            <!-- Blog posts will be loaded here -->
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading more posts...</p>
+        </div>
+
+        <div id="no-blogs" class="no-blogs" style="display: none;">
+            <h3>No blog posts yet</h3>
+            <p>Check back soon for new content!</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <!-- Error messages will appear here -->
+        </div>
+    </div>
+
+    <div id="stats" class="stats">
+        Loaded: <span id="loaded-count">0</span> posts
+    </div>
+
+    <script>
+        class LazyLoadingBlogs {
+            constructor() {
+                this.currentPage = 1;
+                this.loading = false;
+                this.hasMore = true;
+                this.loadedPosts = 0;
+                this.postsPerPage = 6; // Load 6 posts at a time for optimal performance
+                this.preloadThreshold = 3; // Start preloading when 3 pages are loaded
+                this.maxLoadedPosts = 50; // Keep max 50 posts in memory
+                
+                this.init();
+            }
+
+            init() {
+                this.loadInitialPosts();
+                this.setupIntersectionObserver();
+                this.setupScrollListener();
+            }
+
+            async loadInitialPosts() {
+                await this.loadPosts();
+            }
+
+            setupIntersectionObserver() {
+                const options = {
+                    root: null,
+                    rootMargin: '200px', // Start loading 200px before reaching bottom
+                    threshold: 0.1
+                };
+
+                this.observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && !this.loading && this.hasMore) {
+                            this.loadPosts();
+                        }
+                    });
+                }, options);
+
+                // Observe the loading element
+                const loadingElement = document.getElementById('loading');
+                if (loadingElement) {
+                    this.observer.observe(loadingElement);
+                }
+            }
+
+            setupScrollListener() {
+                // Debounced scroll listener for additional safety
+                let scrollTimeout;
+                window.addEventListener('scroll', () => {
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        this.checkScrollPosition();
+                    }, 100);
+                });
+            }
+
+            checkScrollPosition() {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const windowHeight = window.innerHeight;
+                const documentHeight = document.documentElement.scrollHeight;
+                
+                // If user is within 300px of bottom and not loading, load more
+                if (documentHeight - scrollTop - windowHeight < 300 && !this.loading && this.hasMore) {
+                    this.loadPosts();
+                }
+            }
+
+            async loadPosts() {
+                if (this.loading || !this.hasMore) return;
+
+                this.loading = true;
+                this.showLoading();
+
+                try {
+                    const response = await fetch(`/.netlify/functions/blogs?page=${this.currentPage}&limit=${this.postsPerPage}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    if (data.blogs && data.blogs.length > 0) {
+                        this.renderPosts(data.blogs);
+                        this.currentPage++;
+                        this.loadedPosts += data.blogs.length;
+                        this.hasMore = data.pagination.hasNext;
+                        this.updateStats();
+                        
+                        // Start preloading when threshold is reached
+                        if (this.currentPage >= this.preloadThreshold) {
+                            this.preloadNextPage();
+                        }
+                        
+                        // Clean up old posts if we have too many
+                        if (this.loadedPosts > this.maxLoadedPosts) {
+                            this.cleanupOldPosts();
+                        }
+                    } else {
+                        this.hasMore = false;
+                        if (this.loadedPosts === 0) {
+                            this.showNoBlogs();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading posts:', error);
+                    this.showError('Failed to load posts. Please try again.');
+                } finally {
+                    this.loading = false;
+                    this.hideLoading();
+                }
+            }
+
+            async preloadNextPage() {
+                // Preload next page in background
+                try {
+                    const response = await fetch(`/.netlify/functions/blogs?page=${this.currentPage}&limit=${this.postsPerPage}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Store preloaded data for quick access
+                        this.preloadedData = data;
+                    }
+                } catch (error) {
+                    console.log('Preload failed:', error);
+                }
+            }
+
+            cleanupOldPosts() {
+                const container = document.getElementById('blogs-container');
+                const posts = container.children;
+                
+                // Remove oldest posts if we have too many
+                if (posts.length > this.maxLoadedPosts) {
+                    const postsToRemove = posts.length - this.maxLoadedPosts;
+                    for (let i = 0; i < postsToRemove; i++) {
+                        posts[0].remove();
+                    }
+                }
+            }
+
+            renderPosts(posts) {
+                const container = document.getElementById('blogs-container');
+                
+                posts.forEach((post, index) => {
+                    const postElement = this.createPostElement(post, this.loadedPosts + index);
+                    container.appendChild(postElement);
+                });
+            }
+
+            createPostElement(post, index) {
+                const article = document.createElement('article');
+                article.className = 'blog-card';
+                article.style.animationDelay = `${index * 0.1}s`;
+                
+                const date = new Date(post.publishedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                article.innerHTML = `
+                    <h2 class="blog-title">${this.escapeHtml(post.title)}</h2>
+                    <p class="blog-excerpt">${this.escapeHtml(post.excerpt)}</p>
+                    <div class="blog-meta">
+                        <span class="blog-date">${date}</span>
+                        <span class="blog-author">by ${this.escapeHtml(post.author)}</span>
+                    </div>
+                `;
+
+                // Add click handler to view full post
+                article.addEventListener('click', () => {
+                    this.viewPost(post.slug);
+                });
+
+                article.style.cursor = 'pointer';
+                
+                return article;
+            }
+
+            viewPost(slug) {
+                // Navigate to individual post view
+                window.location.href = `/post/${slug}`;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            showLoading() {
+                const loading = document.getElementById('loading');
+                if (loading) loading.style.display = 'block';
+            }
+
+            hideLoading() {
+                const loading = document.getElementById('loading');
+                if (loading) loading.style.display = 'none';
+            }
+
+            showNoBlogs() {
+                const noBlogs = document.getElementById('no-blogs');
+                if (noBlogs) noBlogs.style.display = 'block';
+            }
+
+            showError(message) {
+                const error = document.getElementById('error');
+                if (error) {
+                    error.textContent = message;
+                    error.style.display = 'block';
+                    
+                    // Hide error after 5 seconds
+                    setTimeout(() => {
+                        error.style.display = 'none';
+                    }, 5000);
+                }
+            }
+
+            updateStats() {
+                const statsElement = document.getElementById('loaded-count');
+                if (statsElement) {
+                    statsElement.textContent = this.loadedPosts;
+                }
+            }
+        }
+
+        // Initialize the lazy loading system
+        document.addEventListener('DOMContentLoaded', () => {
+            new LazyLoadingBlogs();
+        });
+    </script>
+</body>
+</html> 
