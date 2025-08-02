@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Flat-File Headless CMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 400px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .admin-container {
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #e1e8ed;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .auth-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .auth-tab:hover:not(.active) {
+            background: #e9ecef;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .admin-header h2 {
+            font-size: 2rem;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .admin-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .blog-form {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .blog-list {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .blog-item {
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .blog-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .blog-item h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .blog-item p {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .blog-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #e1e8ed;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tags-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .tag {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .admin-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login/Signup Form -->
+        <div id="login-container" class="login-container">
+            <div class="header">
+                <h1>🔐 Admin Panel</h1>
+            </div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchTab('login')">Login</button>
+                <button class="auth-tab" onclick="switchTab('signup')">Sign Up</button>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form active">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" name="password" required>
+                </div>
+                
+                <button type="submit" class="btn">Login</button>
+            </form>
+            
+            <!-- Signup Form -->
+            <form id="signup-form" class="auth-form">
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" name="password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-confirm-password">Confirm Password</label>
+                    <input type="password" id="signup-confirm-password" name="confirmPassword" required>
+                </div>
+                
+                <button type="submit" class="btn">Sign Up</button>
+            </form>
+            
+            <div id="auth-message"></div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="admin-container" class="admin-container">
+            <div class="admin-header">
+                <h2>📝 Blog Management</h2>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+
+            <div class="admin-content">
+                <!-- Blog Form -->
+                <div class="blog-form">
+                    <h3>Create/Edit Blog Post</h3>
+                    <form id="blog-form">
+                        <div class="form-group">
+                            <label for="title">Title</label>
+                            <input type="text" id="title" name="title" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="excerpt">Excerpt</label>
+                            <textarea id="excerpt" name="excerpt" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="content">Content (Markdown)</label>
+                            <textarea id="content" name="content" rows="15" required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tags">Tags (comma separated)</label>
+                            <input type="text" id="tags" name="tags" placeholder="technology, web, cms">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="featured" name="featured">
+                                Featured Post
+                            </label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select id="status" name="status">
+                                <option value="published">Published</option>
+                                <option value="draft">Draft</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn">Save Post</button>
+                        <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear Form</button>
+                    </form>
+                    
+                    <div id="form-message"></div>
+                </div>
+
+                <!-- Blog List -->
+                <div class="blog-list">
+                    <h3>All Posts</h3>
+                    <div id="blogs-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading posts...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AdminPanel {
+            constructor() {
+                this.token = localStorage.getItem('admin_token');
+                this.currentUser = JSON.parse(localStorage.getItem('admin_user') || 'null');
+                this.editingSlug = null;
+                this.currentTab = 'login';
+                
+                this.init();
+            }
+
+            init() {
+                if (this.token && this.currentUser) {
+                    this.showAdminPanel();
+                    this.loadBlogs();
+                } else {
+                    this.showLoginForm();
+                }
+                
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                // Login form
+                const loginForm = document.getElementById('login-form');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.login();
+                    });
+                }
+
+                // Signup form
+                const signupForm = document.getElementById('signup-form');
+                if (signupForm) {
+                    signupForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.signup();
+                    });
+                }
+
+                // Blog form
+                const blogForm = document.getElementById('blog-form');
+                if (blogForm) {
+                    blogForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.saveBlog();
+                    });
+                }
+            }
+
+            switchTab(tab) {
+                this.currentTab = tab;
+                
+                // Update tab buttons
+                document.querySelectorAll('.auth-tab').forEach(tabBtn => {
+                    tabBtn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+                
+                // Update forms
+                document.querySelectorAll('.auth-form').forEach(form => {
+                    form.classList.remove('active');
+                });
+                
+                if (tab === 'login') {
+                    document.getElementById('login-form').classList.add('active');
+                } else {
+                    document.getElementById('signup-form').classList.add('active');
+                }
+            }
+
+            async login() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                try {
+                    const response = await fetch('/.netlify/functions/auth', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password, action: 'login' })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        this.token = data.token;
+                        this.currentUser = data.user;
+                        
+                        localStorage.setItem('admin_token', this.token);
+                        localStorage.setItem('admin_user', JSON.stringify(this.currentUser));
+                        
+                        this.showAdminPanel();
+                        this.loadBlogs();
+                        this.showAuthMessage('Login successful!', 'success');
+                    } else {
+                        this.showAuthMessage(data.error || 'Login failed', 'error');
+                    }
+                } catch (error) {
+                    this.showAuthMessage('Network error. Please try again.', 'error');
+                }
+            }
+
+            async signup() {
+                const email = document.getElementById('signup-email').value;
+                const password = document.getElementById('signup-password').value;
+                const confirmPassword = document.getElementById('signup-confirm-password').value;
+                
+                if (password !== confirmPassword) {
+                    this.showAuthMessage('Passwords do not match', 'error');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/.netlify/functions/auth', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password, action: 'signup' })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        this.token = data.token;
+                        this.currentUser = data.user;
+                        
+                        localStorage.setItem('admin_token', this.token);
+                        localStorage.setItem('admin_user', JSON.stringify(this.currentUser));
+                        
+                        this.showAdminPanel();
+                        this.loadBlogs();
+                        this.showAuthMessage('Account created successfully!', 'success');
+                    } else {
+                        this.showAuthMessage(data.error || 'Signup failed', 'error');
+                    }
+                } catch (error) {
+                    this.showAuthMessage('Network error. Please try again.', 'error');
+                }
+            }
+
+            logout() {
+                this.token = null;
+                this.currentUser = null;
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_user');
+                this.showLoginForm();
+            }
+
+            showLoginForm() {
+                document.getElementById('login-container').style.display = 'block';
+                document.getElementById('admin-container').style.display = 'none';
+            }
+
+            showAdminPanel() {
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('admin-container').style.display = 'block';
+            }
+
+            showAuthMessage(message, type) {
+                const messageDiv = document.getElementById('auth-message');
+                messageDiv.textContent = message;
+                messageDiv.className = type;
+                messageDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 5000);
+            }
+
+            async loadBlogs() {
+                const blogsList = document.getElementById('blogs-list');
+                blogsList.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading posts...</p></div>';
+
+                try {
+                    const response = await fetch('/.netlify/functions/blogs', {
+                        headers: {
+                            'Authorization': `Bearer ${this.token}`
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        this.renderBlogs(data.blogs || []);
+                    } else {
+                        blogsList.innerHTML = '<div class="error">Failed to load posts</div>';
+                    }
+                } catch (error) {
+                    blogsList.innerHTML = '<div class="error">Network error</div>';
+                }
+            }
+
+            renderBlogs(blogs) {
+                const blogsList = document.getElementById('blogs-list');
+                
+                if (blogs.length === 0) {
+                    blogsList.innerHTML = '<p>No blog posts yet. Create your first post!</p>';
+                    return;
+                }
+
+                blogsList.innerHTML = blogs.map(blog => `
+                    <div class="blog-item">
+                        <h3>${this.escapeHtml(blog.title)}</h3>
+                        <p>${this.escapeHtml(blog.excerpt)}</p>
+                        <p><strong>Status:</strong> ${blog.status} | <strong>Date:</strong> ${new Date(blog.publishedAt).toLocaleDateString()}</p>
+                        <div class="blog-actions">
+                            <button class="btn btn-small" onclick="adminPanel.editBlog('${blog.slug}')">Edit</button>
+                            <button class="btn btn-small btn-danger" onclick="adminPanel.deleteBlog('${blog.slug}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            async saveBlog() {
+                const formData = {
+                    title: document.getElementById('title').value,
+                    excerpt: document.getElementById('excerpt').value,
+                    content: document.getElementById('content').value,
+                    tags: document.getElementById('tags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+                    featured: document.getElementById('featured').checked,
+                    status: document.getElementById('status').value
+                };
+
+                try {
+                    const url = this.editingSlug 
+                        ? `/.netlify/functions/blogs/${this.editingSlug}`
+                        : '/.netlify/functions/blogs';
+                    
+                    const method = this.editingSlug ? 'PUT' : 'POST';
+
+                    const response = await fetch(url, {
+                        method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.token}`
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        this.showFormMessage('Blog post saved successfully!', 'success');
+                        this.clearForm();
+                        this.loadBlogs();
+                    } else {
+                        this.showFormMessage(data.error || 'Failed to save post', 'error');
+                    }
+                } catch (error) {
+                    this.showFormMessage('Network error. Please try again.', 'error');
+                }
+            }
+
+            async editBlog(slug) {
+                try {
+                    const response = await fetch(`/.netlify/functions/blogs/${slug}`, {
+                        headers: {
+                            'Authorization': `Bearer ${this.token}`
+                        }
+                    });
+
+                    const blog = await response.json();
+
+                    if (response.ok) {
+                        this.editingSlug = slug;
+                        document.getElementById('title').value = blog.title;
+                        document.getElementById('excerpt').value = blog.excerpt;
+                        document.getElementById('content').value = blog.content;
+                        document.getElementById('tags').value = blog.tags.join(', ');
+                        document.getElementById('featured').checked = blog.featured;
+                        document.getElementById('status').value = blog.status;
+                        
+                        document.querySelector('#blog-form button[type="submit"]').textContent = 'Update Post';
+                    }
+                } catch (error) {
+                    this.showFormMessage('Failed to load blog for editing', 'error');
+                }
+            }
+
+            async deleteBlog(slug) {
+                if (!confirm('Are you sure you want to delete this blog post?')) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/.netlify/functions/blogs/${slug}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${this.token}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        this.showFormMessage('Blog post deleted successfully!', 'success');
+                        this.loadBlogs();
+                    } else {
+                        this.showFormMessage('Failed to delete post', 'error');
+                    }
+                } catch (error) {
+                    this.showFormMessage('Network error. Please try again.', 'error');
+                }
+            }
+
+            clearForm() {
+                document.getElementById('blog-form').reset();
+                this.editingSlug = null;
+                document.querySelector('#blog-form button[type="submit"]').textContent = 'Save Post';
+            }
+
+            showFormMessage(message, type) {
+                const messageDiv = document.getElementById('form-message');
+                messageDiv.textContent = message;
+                messageDiv.className = type;
+                messageDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 5000);
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        // Initialize admin panel
+        let adminPanel;
+        document.addEventListener('DOMContentLoaded', () => {
+            adminPanel = new AdminPanel();
+        });
+
+        // Global functions for button clicks
+        function logout() {
+            adminPanel.logout();
+        }
+
+        function clearForm() {
+            adminPanel.clearForm();
+        }
+
+        function switchTab(tab) {
+            adminPanel.switchTab(tab);
+        }
+    </script>
+</body>
+</html> 
