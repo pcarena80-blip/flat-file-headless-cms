@@ -18,6 +18,48 @@ function verifyToken(authHeader) {
     }
 }
 
+// Get blog statistics
+async function getBlogStats() {
+    const githubAPI = new GitHubAPI();
+    
+    try {
+        const result = await githubAPI.listFiles('blogs');
+        
+        if (!result.success) {
+            return { total: 0, published: 0, draft: 0, views: 0 };
+        }
+
+        const mdFiles = result.files.filter(file => file.name.endsWith('.md'));
+        let total = 0;
+        let published = 0;
+        let draft = 0;
+        let views = 0;
+
+        // Count blog statuses
+        for (const file of mdFiles) {
+            const blogResult = await githubAPI.getFile(`blogs/${file.name}`);
+            if (blogResult.success) {
+                const blog = parseBlogFromMarkdown(blogResult.content, file.name.replace('.md', ''));
+                if (blog) {
+                    total++;
+                    if (blog.status === 'published') {
+                        published++;
+                    } else if (blog.status === 'draft') {
+                        draft++;
+                    }
+                    // Mock views for demo (in real app, this would come from analytics)
+                    views += Math.floor(Math.random() * 100) + 10;
+                }
+            }
+        }
+
+        return { total, published, draft, views };
+    } catch (error) {
+        console.error('Error getting blog stats:', error);
+        return { total: 0, published: 0, draft: 0, views: 0 };
+    }
+}
+
 // Get all blog posts with lazy loading support
 async function getBlogs(page = 1, limit = 10) {
     const githubAPI = new GitHubAPI();
@@ -227,10 +269,20 @@ exports.handler = async (event, context) => {
         const parsedPage = parseInt(page) || 1;
         const parsedLimit = parseInt(limit) || 10;
 
-        // GET - List blogs or get single blog
+        // GET - List blogs, get single blog, or get stats
         if (event.httpMethod === 'GET') {
             const pathSegments = event.path.split('/');
             const slug = pathSegments[pathSegments.length - 1];
+            
+            // Check if requesting stats
+            if (event.queryStringParameters && event.queryStringParameters.action === 'stats') {
+                const stats = await getBlogStats();
+                return {
+                    statusCode: 200,
+                    headers,
+                    body: JSON.stringify({ success: true, stats })
+                };
+            }
             
             if (slug && slug !== 'blogs') {
                 // Get single blog
