@@ -2,8 +2,8 @@
 title: "Welcome to Your Flat-File Headless CMS!"
 excerpt: "Get started with your new GitHub-powered content management system. Learn how to create, edit, and manage your blog posts with ease."
 author: "gemani5683@amirei.com"
-publishedAt: "2025-08-03T19:18:03.963Z"
-updatedAt: "2025-08-03T19:18:03.963Z"
+publishedAt: "2025-08-03T19:18:04.901Z"
+updatedAt: "2025-08-03T19:18:04.901Z"
 tags: []
 featured: false
 status: "published"
