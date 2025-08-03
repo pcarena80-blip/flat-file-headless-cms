@@ -2,8 +2,8 @@
 title: "vc"
 excerpt: "vcv"
 author: "gemani5683@amirei.com"
-publishedAt: "2025-08-03T19:21:45.599Z"
-updatedAt: "2025-08-03T19:21:45.599Z"
+publishedAt: "2025-08-03T19:21:46.409Z"
+updatedAt: "2025-08-03T19:21:46.409Z"
 tags: []
 featured: false
 status: "published"
