@@ -2,8 +2,8 @@
 title: "drama"
 excerpt: "bnhgbhibhibhi"
 author: "abuzarrahimkh@gmail.com"
-publishedAt: "2025-08-04T09:24:36.678Z"
-updatedAt: "2025-08-04T09:24:36.678Z"
+publishedAt: "2025-08-04T09:24:37.685Z"
+updatedAt: "2025-08-04T09:24:37.685Z"
 tags: []
 featured: true
 status: "published"
